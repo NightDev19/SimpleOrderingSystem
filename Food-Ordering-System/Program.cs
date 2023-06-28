@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 namespace FoodOrderingSystem
 {
      class Program
@@ -44,35 +44,34 @@ namespace FoodOrderingSystem
         static void OrderFood()
         {
             List<string> menu = new List<string>
-            {
-                "Burger",
-                "Pizza",
-                "Fries",
-                "Salad",
-                "Sandwich",
-                "Sushi",
-                "Pasta",
-                "Chicken Wings",
-                "Steak",
-                "Ice Cream"
-            };
+    {
+        "Burger",
+        "Pizza",
+        "Fries",
+        "Salad",
+        "Sandwich",
+        "Sushi",
+        "Pasta",
+        "Chicken Wings",
+        "Steak",
+        "Ice Cream"
+    };
 
             Dictionary<string, decimal> itemPrices = new Dictionary<string, decimal>
-            {
-                { "Burger", 5.99m },
-                { "Pizza", 8.99m },
-                { "Fries", 2.99m },
-                { "Salad", 4.99m },
-                { "Sandwich", 6.99m },
-                { "Sushi", 10.99m },
-                { "Pasta", 7.99m },
-                { "Chicken Wings", 9.99m },
-                { "Steak", 15.99m },
-                { "Ice Cream", 3.99m }
-            };
+    {
+        { "Burger", 5.99m },
+        { "Pizza", 8.99m },
+        { "Fries", 2.99m },
+        { "Salad", 4.99m },
+        { "Sandwich", 6.99m },
+        { "Sushi", 10.99m },
+        { "Pasta", 7.99m },
+        { "Chicken Wings", 9.99m },
+        { "Steak", 15.99m },
+        { "Ice Cream", 3.99m }
+    };
 
-            List<string> orderedItems = new List<string>();
-            decimal total = 0;
+            Dictionary<string, int> orderDetails = new Dictionary<string, int>();
 
             while (true)
             {
@@ -95,9 +94,25 @@ namespace FoodOrderingSystem
                 if (int.TryParse(input, out int itemNumber) && itemNumber >= 1 && itemNumber <= menu.Count)
                 {
                     string selectedItem = menu[itemNumber - 1];
-                    orderedItems.Add(selectedItem);
-                    total += itemPrices[selectedItem];
-                    Console.WriteLine($"{selectedItem} added to the order.");
+
+                    Console.Write($"Enter the quantity for {selectedItem}: ");
+                    if (int.TryParse(Console.ReadLine(), out int quantity) && quantity >= 1)
+                    {
+                        if (orderDetails.ContainsKey(selectedItem))
+                        {
+                            orderDetails[selectedItem] += quantity;
+                        }
+                        else
+                        {
+                            orderDetails[selectedItem] = quantity;
+                        }
+
+                        Console.WriteLine($"{quantity} {selectedItem}(s) added to the order.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid quantity. Please try again.");
+                    }
                 }
                 else
                 {
@@ -107,39 +122,58 @@ namespace FoodOrderingSystem
                 Console.WriteLine();
             }
 
-            if (orderedItems.Count > 0)
+            if (orderDetails.Count > 0)
             {
                 Console.Clear();
                 Console.WriteLine("===== Order Summary =====");
-                Console.WriteLine("Items Ordered:");
-                foreach (string item in orderedItems)
+                Console.WriteLine("Item\t\tQuantity\tPrice\t\tTotal");
+                Console.WriteLine("-----------------------------------------------");
+                decimal total = 0;
+                foreach (var item in orderDetails)
                 {
-                    Console.WriteLine(item);
+                    string itemName = item.Key;
+                    int quantity = item.Value;
+                    decimal price = itemPrices[itemName];
+                    decimal itemTotal = price * quantity;
+                    total += itemTotal;
+
+                    Console.WriteLine($"{itemName}\t\t{quantity}\t\t${price}\t\t${itemTotal}");
                 }
-                Console.WriteLine("=========================");
-                Console.WriteLine($"Total: ${total}");
+                Console.WriteLine("-----------------------------------------------");
+                Console.WriteLine($"Total:\t\t\t\t\t\t${total}");
 
-                Console.Write("Enter the payment amount: $");
-                if (decimal.TryParse(Console.ReadLine(), out decimal paymentAmount))
+                Console.WriteLine();
+
+                Console.Write("Proceed with the order? (Y/N): ");
+                string proceedChoice = Console.ReadLine();
+                if (proceedChoice.ToUpper() == "Y")
                 {
-                    if (paymentAmount >= total)
+                    Console.Write("Enter the payment amount: $");
+                    if (decimal.TryParse(Console.ReadLine(), out decimal paymentAmount))
                     {
-                        decimal change = paymentAmount - total;
-                        Console.WriteLine($"Change: ${change}");
+                        if (paymentAmount >= total)
+                        {
+                            decimal change = paymentAmount - total;
+                            Console.WriteLine($"Change: ${change}");
 
-                        string orderDetails = $"Items Ordered: {string.Join(", ", orderedItems)}\nTotal: ${total}\nPayment: ${paymentAmount}\nChange: ${change}";
-                        orderHistory.Add(orderDetails);
+                            string orderDetailsString = GenerateOrderDetailsString(orderDetails, itemPrices, total, paymentAmount, change);
+                            orderHistory.Add(orderDetailsString);
 
-                        Console.WriteLine("Order placed successfully!");
+                            Console.WriteLine("Order placed successfully!");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Insufficient payment. Order canceled.");
+                        }
                     }
                     else
                     {
-                        Console.WriteLine("Insufficient payment. Order canceled.");
+                        Console.WriteLine("Invalid payment amount. Order canceled.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Invalid payment amount. Order canceled.");
+                    Console.WriteLine("Order canceled. Thank you for visiting our store.");
                 }
             }
             else
@@ -171,6 +205,31 @@ namespace FoodOrderingSystem
             Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
+
+        static string GenerateOrderDetailsString(Dictionary<string, int> orderDetails, Dictionary<string, decimal> itemPrices, decimal total, decimal paymentAmount, decimal change)
+        {
+            string orderDetailsString = "===== Order Details =====\n";
+            orderDetailsString += "Item\t\tQuantity\tPrice\t\tTotal\n";
+            orderDetailsString += "----------------------------------------------------\n";
+
+            foreach (var item in orderDetails)
+            {
+                string itemName = item.Key;
+                int quantity = item.Value;
+                decimal price = itemPrices[itemName];
+                decimal itemTotal = price * quantity;
+
+                orderDetailsString += $"{itemName}\t\t{quantity}\t\t${price}\t\t${itemTotal}\n";
+            }
+
+            orderDetailsString += "----------------------------------------------------\n";
+            orderDetailsString += $"Total:\t\t\t\t\t\t${total}\n";
+            orderDetailsString += $"Payment:\t\t\t\t\t${paymentAmount}\n";
+            orderDetailsString += $"Change:\t\t\t\t\t\t${change}\n";
+
+            return orderDetailsString;
+        }
+
 
     }
 }
